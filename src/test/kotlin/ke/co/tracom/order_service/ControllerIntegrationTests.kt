@@ -33,6 +33,12 @@ class ControllerIntegrationTests {
     private lateinit var refundController: RefundController
 
     @Autowired
+    private lateinit var globalExceptionHandler: ke.co.tracom.order_service.exception.GlobalExceptionHandler
+
+    @Autowired
+    private lateinit var saleRepository: ke.co.tracom.order_service.repository.SaleRepository
+
+    @Autowired
     private lateinit var openAPI: io.swagger.v3.oas.models.OpenAPI
 
     @Autowired(required = false)
@@ -47,7 +53,7 @@ class ControllerIntegrationTests {
             orderController,
             manufacturerController,
             refundController
-        ).build()
+        ).setControllerAdvice(globalExceptionHandler).build()
     }
 
     @Test
@@ -119,6 +125,102 @@ class ControllerIntegrationTests {
         org.junit.jupiter.api.Assertions.assertEquals("Supply Chain Order & Refund Service API", openAPI.info.title)
         org.junit.jupiter.api.Assertions.assertEquals("1.0.0", openAPI.info.version)
         org.junit.jupiter.api.Assertions.assertNotNull(openAPI.info.description)
+    }
+
+    @Test
+    fun `test POST refunds with etimsReceiptNumber alias parses correctly without 500 error`() {
+        val userCurlPayload = """
+            {
+              "saleReference": "string",
+              "supplierInvoiceNumber": "string",
+              "items": [
+                {
+                  "productId": "string",
+                  "quantity": 0
+                }
+              ],
+              "reason": "string",
+              "requestedBy": "string",
+              "etimsReceiptNumber": "string"
+            }
+        """.trimIndent()
+
+        // Verifies the payload parses properly and reaches business logic, returning 404 for non-existent sale rather than 500
+        mockMvc.perform(
+            post("/api/refunds")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(userCurlPayload)
+        )
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.status").value(404))
+            .andExpect(jsonPath("$.error").value("SALE_NOT_FOUND"))
+    }
+
+    @Test
+    fun `test POST refunds with malformed JSON returns 400 Bad Request`() {
+        mockMvc.perform(
+            post("/api/refunds")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{ invalid json }")
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.error").value("MALFORMED_JSON_REQUEST"))
+    }
+
+    @Test
+    fun `test POST refunds valid request using etimsReceiptNumber lowercase alias`() {
+        // Save isolated sale for controller integration test to avoid mutating baseline data
+        val testSale = ke.co.tracom.order_service.domain.model.Sale(
+            saleReference = "SALE-CTRL-ALIAS-01",
+            eTimsReceiptNumber = "ETIMS-ALIAS-001",
+            supplierInvoiceNumber = "INV-ALIAS-001",
+            customerId = "CUST-CTRL",
+            customerName = "Controller Test Store",
+            subtotal = java.math.BigDecimal("1440.00"),
+            taxAmount = java.math.BigDecimal("230.40"),
+            totalAmount = java.math.BigDecimal("1670.40"),
+            saleDate = java.time.LocalDateTime.now()
+        )
+        val testSaleItem = ke.co.tracom.order_service.domain.model.SaleItem(
+            sale = testSale,
+            productId = "PRD-MILK-01",
+            productName = "Brookside Fresh Milk 500ml (Ctn of 24)",
+            quantitySold = 2,
+            quantityRefunded = 0,
+            unitPrice = java.math.BigDecimal("1440.00"),
+            taxRate = java.math.BigDecimal("0.16"),
+            totalPrice = java.math.BigDecimal("2880.00"),
+            taxAmount = java.math.BigDecimal("460.80")
+        )
+        testSale.items.add(testSaleItem)
+        saleRepository.save(testSale)
+
+        val validPayload = """
+            {
+              "saleReference": "SALE-CTRL-ALIAS-01",
+              "supplierInvoiceNumber": "INV-ALIAS-001",
+              "items": [
+                {
+                  "productId": "PRD-MILK-01",
+                  "quantity": 1
+                }
+              ],
+              "reason": "Defective goods",
+              "requestedBy": "Store Manager",
+              "etimsReceiptNumber": "ETIMS-ALIAS-001"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(
+            post("/api/refunds")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validPayload)
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.refundNumber").exists())
+            .andExpect(jsonPath("$.creditNote.creditNoteNumber").exists())
+            .andExpect(jsonPath("$.status").value("COMPLETED"))
     }
 
     @Test

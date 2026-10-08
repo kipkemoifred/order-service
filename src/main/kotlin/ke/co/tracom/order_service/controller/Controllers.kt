@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import ke.co.tracom.order_service.domain.dto.*
+import ke.co.tracom.order_service.exception.*
 import ke.co.tracom.order_service.service.CatalogService
 import ke.co.tracom.order_service.service.ManufacturerService
 import ke.co.tracom.order_service.service.OrderService
@@ -142,11 +143,15 @@ class RefundController(
     @GetMapping("/lookup-sale")
     fun lookupSale(
         @Parameter(description = "KRA e-TIMS receipt number, e.g. ETIMS-REC-88492041")
-        @RequestParam eTimsReceiptNumber: String,
+        @RequestParam(required = false) eTimsReceiptNumber: String?,
+        @Parameter(description = "KRA e-TIMS receipt number alias, e.g. ETIMS-REC-88492041")
+        @RequestParam(required = false) etimsReceiptNumber: String?,
         @Parameter(description = "Supplier invoice number, e.g. INV-SUP-99102")
         @RequestParam supplierInvoiceNumber: String
     ): ResponseEntity<SaleResponse> {
-        return ResponseEntity.ok(refundService.lookupSale(eTimsReceiptNumber, supplierInvoiceNumber))
+        val receiptNumber = (eTimsReceiptNumber ?: etimsReceiptNumber)
+            ?: throw MissingMandatoryInformationException("eTimsReceiptNumber is required")
+        return ResponseEntity.ok(refundService.lookupSale(receiptNumber, supplierInvoiceNumber))
     }
 
     @Operation(summary = "Process Refund & Issue KRA Credit Note", description = "Computes adjusted prices and affected tax, issues Credit Note to KRA e-TIMS, reverses stock, and cancels linked unfulfilled backorders")

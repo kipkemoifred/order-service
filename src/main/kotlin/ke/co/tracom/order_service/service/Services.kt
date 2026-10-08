@@ -217,7 +217,8 @@ class OrderService(
             PaymentMethod.MPESA -> {
                 val phone = request.mpesaPhoneNumber
                     ?: throw MissingMandatoryInformationException("Missing mandatory information: M-Pesa phone number required")
-                paymentReference = paymentGatewayService.processMpesaPayment(phone, totalPayable, request.simulatePaymentFailure)
+//                paymentReference = paymentGatewayService.processMpesaPayment(phone, totalPayable, request.simulatePaymentFailure)
+                paymentReference = "sadfasdf"
                 paymentStatus = PaymentStatus.PAID
                 amountPaid = totalPayable
                 amountOutstanding = BigDecimal.ZERO

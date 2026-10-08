@@ -1237,9 +1237,11 @@
         return;
       }
 
+      const receiptNum = currentLoadedSale.eTimsReceiptNumber || currentLoadedSale.etimsReceiptNumber;
       const payload = {
         saleReference: currentLoadedSale.saleReference,
-        eTimsReceiptNumber: currentLoadedSale.eTimsReceiptNumber,
+        eTimsReceiptNumber: receiptNum,
+        etimsReceiptNumber: receiptNum,
         supplierInvoiceNumber: currentLoadedSale.supplierInvoiceNumber,
         items: returnItems,
         reason: document.getElementById('refund-reason-select').value,
