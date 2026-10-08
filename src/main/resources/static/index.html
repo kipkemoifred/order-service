@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supply Chain Order & Refund Management Platform</title>
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-dark: #047857;
+      --primary-light: #d1fae5;
+      --secondary: #1e293b;
+      --accent: #2563eb;
+      --warning: #f59e0b;
+      --danger: #dc2626;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 10px;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 60px; line-height: 1.5; }
+
+    header {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      padding: 20px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    header .brand { display: flex; align-items: center; gap: 14px; }
+    header .badge { background: var(--primary); padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    nav {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex;
+      gap: 24px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    nav button {
+      background: none;
+      border: none;
+      padding: 16px 4px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    nav button.active { color: var(--primary-dark); }
+    nav button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .container { max-width: 1280px; margin: 28px auto; padding: 0 20px; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .grid-2 { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px; }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+    .card-title { font-size: 18px; font-weight: 700; color: var(--secondary); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+
+    .badge-status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .status-paid { background: #dcfce7; color: #15803d; }
+    .status-unpaid { background: #fef3c7; color: #b45309; }
+    .status-pending { background: #e0f2fe; color: #0369a1; }
+    .status-delivered { background: #dcfce7; color: #166534; }
+    .status-cancelled { background: #fee2e2; color: #991b1b; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .form-control, select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus, select:focus { border-color: var(--primary); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #e2e8f0; color: var(--secondary); }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: #f1f5f9; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 12px 14px; background: #f8fafc; color: var(--text-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    td { padding: 14px; border-bottom: 1px solid var(--border); }
+    tr:hover { background-color: #f8fafc; }
+
+    .catalog-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .catalog-item:last-child { border-bottom: none; }
+    .catalog-item .item-info h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .catalog-item .item-info p { font-size: 13px; color: var(--text-muted); }
+    .catalog-item .price { font-weight: 700; color: var(--secondary); font-size: 15px; margin-right: 12px; }
+
+    .cart-summary-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .cart-summary-total {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-top: 2px dashed var(--border);
+      margin-top: 8px;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--secondary);
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: white;
+      border-radius: 14px;
+      max-width: 540px;
+      width: 100%;
+      padding: 28px;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .receipt-slip {
+      background: #fafaf9;
+      border: 1px dashed #d6d3d1;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+
+    .stk-modal {
+      text-align: center;
+      padding: 20px 10px;
+    }
+    .mpesa-logo {
+      width: 80px;
+      height: 80px;
+      background: #00aa13;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 30px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      border-left: 4px solid var(--primary);
+    }
+    .stat-card .title { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+    .stat-card .val { font-size: 26px; font-weight: 800; color: var(--secondary); margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span class="badge">Value Chain v2.0</span>
+      <h2 style="font-size: 20px; font-weight: 800; letter-spacing: -0.5px;">Orders & Returns System</h2>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div style="font-size: 13px; color: #94a3b8;">
+        Shop Owner &bull; Supplier &bull; Manufacturer Portal
+      </div>
+      <a href="/swagger-ui.html" target="_blank" class="btn btn-primary btn-sm" style="text-decoration: none; background: #2563eb; color: white;">
+        📚 Swagger UI
+      </a>
+      <a href="/v3/api-docs" target="_blank" class="btn btn-outline btn-sm" style="text-decoration: none; color: #94a3b8; border-color: #475569;">
+        📄 OpenAPI JSON
+      </a>
+    </div>
+  </header>
+
+  <nav>
+    <button class="active" onclick="switchTab('orders-tab', this)">
+      <span>🛒</span> Place Order & Cart
+    </button>
+    <button onclick="switchTab('pending-tab', this)">
+      <span>📦</span> Pending Orders (AP-03 / AP3 / AP4)
+    </button>
+    <button onclick="switchTab('manufacturer-tab', this)">
+      <span>🏭</span> Manufacturer Demand Aggregation
+    </button>
+    <button onclick="switchTab('refunds-tab', this)">
+      <span>🔄</span> Refunds & Returns (KRA e-TIMS)
+    </button>
+  </nav>
+
+  <div class="container">
+
+    <!-- 1. PLACE ORDER & CART TAB -->
+    <div id="orders-tab" class="tab-content active">
+      <div id="order-alert" class="alert"></div>
+
+      <div class="grid-2">
+        <!-- Products & Supplier Catalogue -->
+        <div class="card">
+          <div class="card-title">
+            <span>Supplier Catalogue</span>
+            <div style="font-size: 13px; font-weight: normal; color: var(--text-muted);">
+              Availability checked in real-time
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-bottom: 18px;">
+            <div class="form-group" style="flex: 1; margin: 0;">
+              <select id="supplier-select" onchange="loadSupplierProducts()">
+                <option value="">-- Choose Supplier --</option>
+              </select>
+            </div>
+            <div class="form-group" style="width: 140px; margin: 0;">
+              <select id="region-select">
+                <option value="Nairobi">Nairobi</option>
+                <option value="Rift Valley">Rift Valley</option>
+                <option value="Coast">Coast</option>
+                <option value="Central">Central</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="product-list-container">
+            <p style="color: var(--text-muted); font-size: 14px;">Select a supplier above to display products and available stock levels.</p>
+          </div>
+        </div>
+
+        <!-- Cart & Checkout -->
+        <div>
+          <div class="card">
+            <div class="card-title">
+              <span>Order Summary & Checkout</span>
+              <span id="cart-item-count" style="font-size: 13px; color: var(--text-muted);">0 items</span>
+            </div>
+
+            <div id="cart-items-list" style="margin-bottom: 16px; min-height: 80px;">
+              <p style="color: var(--text-muted); font-size: 14px; text-align: center; padding: 20px 0;">Cart is empty. Add products from the catalogue.</p>
+            </div>
+
+            <div id="cart-calculations" style="display: none; border-top: 1px solid var(--border); padding-top: 12px;">
+              <div class="cart-summary-line">
+                <span>Subtotal (Net)</span>
+                <span id="cart-subtotal">KES 0.00</span>
+              </div>
+              <div class="cart-summary-line">
+                <span>Applicable VAT (16%)</span>
+                <span id="cart-tax">KES 0.00</span>
+              </div>
+              <div class="cart-summary-line">
+                <span>Delivery Charges</span>
+                <span id="cart-delivery">KES 350.00</span>
+              </div>
+              <div class="cart-summary-total">
+                <span>Total Payable Amount</span>
+                <span id="cart-total" style="color: var(--primary);">KES 0.00</span>
+              </div>
+
+              <!-- Shop Owner Details -->
+              <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);">
+                <div class="form-group">
+                  <label>Shop / Store Owner Name</label>
+                  <input type="text" id="shop-owner-name" class="form-control" value="Mama Jane Duka">
+                </div>
+                <div class="form-group">
+                  <label>M-Pesa / Contact Phone</label>
+                  <input type="text" id="shop-owner-phone" class="form-control" value="0712345678">
+                </div>
+
+                <div class="form-group">
+                  <label>Payment Method</label>
+                  <select id="payment-method-select" onchange="togglePaymentInputs()">
+                    <option value="MPESA">Pay Before Delivery (M-Pesa STK Push)</option>
+                    <option value="CARD">Pay Before Delivery (Credit/Debit Card)</option>
+                    <option value="PAY_ON_DELIVERY">Pay on Delivery (Confirmed Unpaid)</option>
+                  </select>
+                </div>
+
+                <div id="card-input-group" class="form-group" style="display: none;">
+                  <label>Card Number (16-digits)</label>
+                  <input type="text" id="card-number" class="form-control" placeholder="4242 4242 4242 4242" value="4242424242424242">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="simulate-failure-check">
+                    <span style="color: var(--danger); font-weight: 600;">Simulate EX-02 Payment Failure (insufficient funds / decline)</span>
+                  </label>
+                </div>
+
+                <button class="btn btn-primary" style="width: 100%; padding: 14px;" onclick="submitOrder()">
+                  <span>⚡</span> Confirm & Place Order
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. PENDING ORDERS TAB -->
+    <div id="pending-tab" class="tab-content">
+      <div id="pending-alert" class="alert"></div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="font-weight: 800; font-size: 20px;">Pending & Active Orders Tracking</h3>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-secondary btn-sm" onclick="loadPendingOrders()">🔄 Refresh</button>
+          <button class="btn btn-danger btn-sm" onclick="openCancelModal()">❌ Cancel Order by Invoice (AP4)</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Order Ref / Invoice</th>
+                <th>Shop Owner</th>
+                <th>Supplier</th>
+                <th>Items & Qty</th>
+                <th>Total (KES)</th>
+                <th>Payment Status</th>
+                <th>Order Status</th>
+                <th>Expected Delivery</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pending-orders-tbody">
+              <tr>
+                <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading pending orders...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. MANUFACTURER DEMAND AGGREGATION TAB -->
+    <div id="manufacturer-tab" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h3 style="font-weight: 800; font-size: 20px;">Manufacturer Demand Aggregation Portal</h3>
+          <p style="color: var(--text-muted); font-size: 14px;">Aggregated pending orders across distributors & retailers for production and financing planning</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadManufacturerDemand()">🔄 Refresh Demand</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 24px;">
+        <div class="stat-card">
+          <div class="title">Total Pending Demand</div>
+          <div class="val" id="stat-total-units">0 Units</div>
+        </div>
+        <div class="stat-card" style="border-left-color: var(--accent);">
+          <div class="title">Active Regions</div>
+          <div class="val" id="stat-active-regions">0 Regions</div>
+        </div>
+        <div class="stat-card" style="border-left-color: var(--warning);">
+          <div class="title">Products Demanded</div>
+          <div class="val" id="stat-products-count">0 Products</div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Product Code & Name</th>
+                <th>Region</th>
+                <th>Total Stock Required</th>
+                <th>Required-By Date</th>
+                <th>Pending Orders Count</th>
+                <th>Suppliers Involved</th>
+              </tr>
+            </thead>
+            <tbody id="manufacturer-demand-tbody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading manufacturer demand data...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. REFUNDS & RETURNS (UC-06 / KRA e-TIMS) TAB -->
+    <div id="refunds-tab" class="tab-content">
+      <div id="refund-alert" class="alert"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Step 1: Lookup Prior Sale by e-TIMS Receipt & Supplier Invoice</span>
+          <button class="btn btn-outline btn-sm" onclick="prefillSampleSale()">💡 Load Seeded Sale Sample</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: flex-end;">
+          <div class="form-group" style="margin: 0;">
+            <label>KRA e-TIMS Receipt Number</label>
+            <input type="text" id="lookup-etims" class="form-control" placeholder="e.g. ETIMS-REC-88492041">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Supplier Invoice Number</label>
+            <input type="text" id="lookup-invoice" class="form-control" placeholder="e.g. INV-SUP-99102">
+          </div>
+          <button class="btn btn-primary" onclick="lookupSale()">🔍 Retrieve Invoice</button>
+        </div>
+      </div>
+
+      <div id="sale-details-container" style="display: none;">
+        <div class="card">
+          <div class="card-title">
+            <span>Step 2: Select Items to Reverse & Enter Return Details</span>
+            <span id="sale-ref-badge" class="badge-status status-pending">Sale Ref</span>
+          </div>
+
+          <div id="sale-header-info" style="margin-bottom: 16px; font-size: 14px; background: #f8fafc; padding: 14px; border-radius: 8px;"></div>
+
+          <div class="table-container" style="margin-bottom: 20px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Unit Price (KES)</th>
+                  <th>Quantity Sold</th>
+                  <th>Already Refunded</th>
+                  <th>Eligible for Return</th>
+                  <th style="width: 140px;">Return Quantity</th>
+                </tr>
+              </thead>
+              <tbody id="sale-items-tbody"></tbody>
+            </table>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px;">
+            <div>
+              <div class="form-group">
+                <label>Reason for Refund / Return (Mandatory)</label>
+                <select id="refund-reason-select" class="form-control">
+                  <option value="Defective goods received">Defective goods received</option>
+                  <option value="Items not manufactured / excessive lead time">Items not manufactured / excessive lead time</option>
+                  <option value="Customer order cancellation">Customer order cancellation</option>
+                  <option value="Damaged in transit">Damaged in transit</option>
+                  <option value="Expired goods delivered">Expired goods delivered</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Agent / User Name</label>
+                <input type="text" id="refund-requested-by" class="form-control" value="Mobile User 01">
+              </div>
+            </div>
+
+            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid var(--border);">
+              <h4 style="margin-bottom: 12px; font-size: 15px;">Computed Refund Summary</h4>
+              <div class="cart-summary-line">
+                <span>Adjusted Net Price</span>
+                <span id="calc-refund-net">KES 0.00</span>
+              </div>
+              <div class="cart-summary-line">
+                <span>Reversed VAT (16%)</span>
+                <span id="calc-refund-tax">KES 0.00</span>
+              </div>
+              <div class="cart-summary-total">
+                <span>Total Refund Amount</span>
+                <span id="calc-refund-total" style="color: var(--primary);">KES 0.00</span>
+              </div>
+              <button class="btn btn-primary" style="width: 100%; margin-top: 14px;" onclick="submitRefund()">
+                🏛️ Submit & Issue KRA e-TIMS Credit Note
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Refund Result / Credit Note Box -->
+      <div id="refund-result-container" style="display: none;">
+        <div class="card" style="border: 2px solid var(--primary); background: #f0fdf4;">
+          <div class="card-title" style="color: var(--primary-dark);">
+            <span>✅ Refund Processed & Credit Note Issued to KRA e-TIMS</span>
+            <span id="cn-number-badge" class="badge-status status-delivered">Credit Note</span>
+          </div>
+          <div id="refund-result-body"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STK PUSH MODAL (M-PESA SIMULATION) -->
+  <div id="stk-modal" class="modal-overlay">
+    <div class="modal-box stk-modal">
+      <div class="mpesa-logo">M</div>
+      <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">M-PESA STK Push</h3>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+        A prompt has been sent to phone <strong id="stk-phone">0712345678</strong> for amount <strong id="stk-amount" style="color: var(--primary);">KES 0.00</strong>
+      </p>
+      <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Do you want to authorize payment to Tracom Supply Chain?</p>
+        <p style="font-size: 12px; color: var(--text-muted);">Simulated MPESA PIN: [ **** ]</p>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <button class="btn btn-secondary" style="flex: 1;" onclick="cancelStkPush()">Cancel</button>
+        <button class="btn btn-primary" style="flex: 1;" onclick="confirmStkPush()">Authorize (PIN OK)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIGITAL RECEIPT MODAL -->
+  <div id="receipt-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="font-weight: 800; font-size: 18px; margin-bottom: 12px; display: flex; justify-content: space-between;">
+        <span>Digital Payment Receipt</span>
+        <span class="badge-status status-paid">PAID</span>
+      </h3>
+      <div id="receipt-content" class="receipt-slip"></div>
+      <button class="btn btn-primary" style="width: 100%;" onclick="closeReceiptModal()">Close Receipt</button>
+    </div>
+  </div>
+
+  <!-- ADJUST ORDER MODAL (AP 3) -->
+  <div id="adjust-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 600px;">
+      <h3 style="font-weight: 800; font-size: 18px; margin-bottom: 12px;">
+        Adjust Order (<span id="adjust-order-ref"></span>)
+      </h3>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+        Update quantities or remove items. Order total and inventory reservations will be automatically recalculated.
+      </p>
+      <div id="adjust-items-container" style="margin-bottom: 16px;"></div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="closeAdjustModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitOrderAdjustment()">Save Adjustments</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANCEL ORDER MODAL (AP 4) -->
+  <div id="cancel-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="font-weight: 800; font-size: 18px; margin-bottom: 12px; color: var(--danger);">
+        Cancel Order by Invoice Number
+      </h3>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+        Enter invoice number to locate and cancel the pending order. Inventory reservations will be released and the supplier notified.
+      </p>
+      <div class="form-group">
+        <label>Invoice Number</label>
+        <input type="text" id="cancel-invoice-input" class="form-control" placeholder="e.g. INV-20261008-XXXX or INV-BACKORDER-001">
+      </div>
+      <div class="form-group">
+        <label>Reason for Cancellation</label>
+        <input type="text" id="cancel-reason-input" class="form-control" value="Store owner order cancellation">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeCancelModal()">Skip / Close</button>
+        <button class="btn btn-danger" onclick="confirmCancelOrder()">Confirm Cancellation</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '';
+    let cart = [];
+    let currentSupplierProducts = [];
+    let activePendingOrderForAdjust = null;
+    let pendingOrderPayload = null;
+    let currentLoadedSale = null;
+
+    // Tab Switching
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+
+      if (tabId === 'pending-tab') loadPendingOrders();
+      if (tabId === 'manufacturer-tab') loadManufacturerDemand();
+    }
+
+    function showAlert(elementId, type, message) {
+      const el = document.getElementById(elementId);
+      el.className = `alert alert-${type}`;
+      el.innerHTML = message;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 8000);
+    }
+
+    // Load Suppliers
+    async function initSuppliers() {
+      try {
+        const res = await fetch(`${API_BASE}/api/catalog/suppliers`);
+        const suppliers = await res.json();
+        const sel = document.getElementById('supplier-select');
+        sel.innerHTML = '<option value="">-- Choose Supplier --</option>';
+        suppliers.forEach(s => {
+          sel.innerHTML += `<option value="${s.supplierId}">${s.supplierName} (${s.region})</option>`;
+        });
+        if (suppliers.length > 0) {
+          sel.value = suppliers[0].supplierId;
+          loadSupplierProducts();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Load Products
+    async function loadSupplierProducts() {
+      const supplierId = document.getElementById('supplier-select').value;
+      const container = document.getElementById('product-list-container');
+      if (!supplierId) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 14px;">Select a supplier to display products.</p>';
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/catalog/suppliers/${supplierId}/products`);
+        currentSupplierProducts = await res.json();
+        renderProductList();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderProductList() {
+      const container = document.getElementById('product-list-container');
+      if (currentSupplierProducts.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 14px;">No products found for this supplier.</p>';
+        return;
+      }
+      let html = '';
+      currentSupplierProducts.forEach(p => {
+        const outOfStock = p.availableStock <= 0;
+        html += `
+          <div class="catalog-item">
+            <div class="item-info">
+              <h4>${p.name}</h4>
+              <p>Code: <strong>${p.productId}</strong> &bull; Category: ${p.category}</p>
+              <p>
+                Stock: <strong>${p.stockLevel}</strong> | Reserved: <strong>${p.reservedStock}</strong> |
+                Available: <span style="font-weight: 700; color: ${outOfStock ? 'var(--danger)' : 'var(--primary)'}">${p.availableStock}</span>
+              </p>
+            </div>
+            <div style="display: flex; align-items: center;">
+              <span class="price">KES ${p.unitPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+              ${outOfStock 
+                ? `<button class="btn btn-secondary btn-sm" disabled>Out of Stock</button>` 
+                : `<button class="btn btn-primary btn-sm" onclick="addToCart('${p.productId}')">+ Add</button>`
+              }
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    // Cart Management
+    function addToCart(productId) {
+      const existing = cart.find(i => i.productId === productId);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ productId, quantity: 1 });
+      }
+      recalculateCart();
+    }
+
+    function updateCartQty(productId, qty) {
+      const item = cart.find(i => i.productId === productId);
+      if (item) {
+        item.quantity = parseInt(qty) || 0;
+        if (item.quantity <= 0) {
+          cart = cart.filter(i => i.productId !== productId);
+        }
+      }
+      recalculateCart();
+    }
+
+    function removeCartItem(productId) {
+      cart = cart.filter(i => i.productId !== productId);
+      recalculateCart();
+    }
+
+    async function recalculateCart() {
+      const supplierId = document.getElementById('supplier-select').value;
+      const countEl = document.getElementById('cart-item-count');
+      const listEl = document.getElementById('cart-items-list');
+      const calcEl = document.getElementById('cart-calculations');
+
+      const totalItems = cart.reduce((acc, i) => acc + i.quantity, 0);
+      countEl.innerText = `${totalItems} items`;
+
+      if (cart.length === 0) {
+        listEl.innerHTML = '<p style="color: var(--text-muted); font-size: 14px; text-align: center; padding: 20px 0;">Cart is empty. Add products from the catalogue.</p>';
+        calcEl.style.display = 'none';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/catalog/cart/calculate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            supplierId: supplierId || 'SUP-BROOKSIDE',
+            region: document.getElementById('region-select').value,
+            items: cart
+          })
+        });
+        const summary = await res.json();
+
+        let itemsHtml = '';
+        summary.itemDetails.forEach(item => {
+          itemsHtml += `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px;">
+              <div style="flex: 1;">
+                <strong>${item.productName}</strong>
+                <div style="color: var(--text-muted);">KES ${item.unitPrice.toFixed(2)} &times; 
+                  <input type="number" min="1" value="${item.quantity}" style="width: 50px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px;" onchange="updateCartQty('${item.productId}', this.value)">
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <strong>KES ${item.lineTotal.toFixed(2)}</strong>
+                <div><button class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 10px; color: var(--danger);" onclick="removeCartItem('${item.productId}')">✕</button></div>
+              </div>
+            </div>
+          `;
+        });
+        listEl.innerHTML = itemsHtml;
+
+        document.getElementById('cart-subtotal').innerText = `KES ${summary.subtotal.toFixed(2)}`;
+        document.getElementById('cart-tax').innerText = `KES ${summary.taxAmount.toFixed(2)}`;
+        document.getElementById('cart-delivery').innerText = `KES ${summary.deliveryCharges.toFixed(2)}`;
+        document.getElementById('cart-total').innerText = `KES ${summary.totalAmount.toFixed(2)}`;
+        calcEl.style.display = 'block';
+
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function togglePaymentInputs() {
+      const pm = document.getElementById('payment-method-select').value;
+      document.getElementById('card-input-group').style.display = (pm === 'CARD') ? 'block' : 'none';
+    }
+
+    // Submit Order
+    async function submitOrder() {
+      if (cart.length === 0) {
+        showAlert('order-alert', 'error', 'Please add at least one product to the cart');
+        return;
+      }
+
+      const supplierId = document.getElementById('supplier-select').value;
+      const shopOwnerName = document.getElementById('shop-owner-name').value;
+      const shopOwnerPhone = document.getElementById('shop-owner-phone').value;
+      const paymentMethod = document.getElementById('payment-method-select').value;
+      const region = document.getElementById('region-select').value;
+      const simulateFailure = document.getElementById('simulate-failure-check').checked;
+      const cardNumber = document.getElementById('card-number').value;
+
+      pendingOrderPayload = {
+        shopOwnerId: 'RET-' + shopOwnerPhone.takeRight(4),
+        shopOwnerName,
+        shopOwnerPhone,
+        supplierId,
+        region,
+        items: cart,
+        paymentMethod,
+        mpesaPhoneNumber: shopOwnerPhone,
+        cardNumber,
+        simulatePaymentFailure: simulateFailure
+      };
+
+      if (paymentMethod === 'MPESA') {
+        // Show STK push modal
+        document.getElementById('stk-phone').innerText = shopOwnerPhone;
+        document.getElementById('stk-amount').innerText = document.getElementById('cart-total').innerText;
+        document.getElementById('stk-modal').classList.add('active');
+      } else {
+        executeOrderCreation(pendingOrderPayload);
+      }
+    }
+
+    String.prototype.takeRight = function(n) {
+      return this.length <= n ? this : this.substr(this.length - n);
+    };
+
+    function cancelStkPush() {
+      document.getElementById('stk-modal').classList.remove('active');
+      showAlert('order-alert', 'error', 'Payment cancelled by customer.');
+    }
+
+    function confirmStkPush() {
+      document.getElementById('stk-modal').classList.remove('active');
+      executeOrderCreation(pendingOrderPayload);
+    }
+
+    async function executeOrderCreation(payload) {
+      try {
+        const res = await fetch(`${API_BASE}/api/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert('order-alert', 'error', `<strong>${data.error || 'Error'}:</strong> ${data.message}`);
+          return;
+        }
+
+        showAlert('order-alert', 'success', `Order <strong>${data.orderNumber}</strong> successfully placed! Payment: ${data.paymentStatus}`);
+        cart = [];
+        recalculateCart();
+        loadSupplierProducts(); // update stock view
+
+        if (data.receipt) {
+          showReceipt(data.receipt);
+        }
+      } catch (e) {
+        showAlert('order-alert', 'error', 'Connection error while creating order.');
+      }
+    }
+
+    function showReceipt(r) {
+      const html = `
+        <div style="text-align: center; border-bottom: 1px dashed #d6d3d1; padding-bottom: 10px; margin-bottom: 10px;">
+          <h4 style="font-size: 16px;">OFFICIAL RECEIPT</h4>
+          <p>Receipt No: <strong>${r.receiptNumber}</strong></p>
+          <p>Date: ${new Date(r.issuedAt).toLocaleString()}</p>
+        </div>
+        <p><strong>Customer:</strong> ${r.shopOwnerName}</p>
+        <p><strong>Supplier:</strong> ${r.supplierName}</p>
+        <p><strong>Order Ref:</strong> ${r.orderNumber}</p>
+        <p><strong>Invoice Ref:</strong> ${r.invoiceNumber}</p>
+        <p><strong>Payment Method:</strong> ${r.paymentMethod}</p>
+        <p><strong>Transaction Ref:</strong> ${r.paymentReference || 'N/A'}</p>
+        <div style="border-top: 1px dashed #d6d3d1; margin-top: 10px; padding-top: 10px;">
+          <p><strong>Total Amount:</strong> KES ${r.totalAmount.toFixed(2)}</p>
+          <p><strong>Amount Paid:</strong> KES ${r.amountPaid.toFixed(2)}</p>
+        </div>
+        <p style="text-align: center; margin-top: 14px; font-size: 11px;">Thank you for your business!</p>
+      `;
+      document.getElementById('receipt-content').innerHTML = html;
+      document.getElementById('receipt-modal').classList.add('active');
+    }
+
+    function closeReceiptModal() {
+      document.getElementById('receipt-modal').classList.remove('active');
+    }
+
+    // Load Pending Orders (AP-03)
+    async function loadPendingOrders() {
+      const tbody = document.getElementById('pending-orders-tbody');
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">Loading orders...</td></tr>';
+      try {
+        const res = await fetch(`${API_BASE}/api/orders/pending`);
+        const orders = await res.json();
+        if (orders.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">No pending orders found.</td></tr>';
+          return;
+        }
+
+        let html = '';
+        orders.forEach(o => {
+          const itemsSummary = o.items.map(i => `${i.productName} (&times;${i.quantity})`).join('<br>');
+          const isPaid = o.paymentStatus === 'PAID';
+          html += `
+            <tr>
+              <td>
+                <strong>${o.orderNumber}</strong><br>
+                <span style="font-size: 12px; color: var(--text-muted);">${o.invoiceNumber}</span>
+              </td>
+              <td>${o.shopOwnerName}<br><span style="font-size: 12px; color: var(--text-muted);">${o.shopOwnerPhone} (${o.region})</span></td>
+              <td>${o.supplierName}</td>
+              <td style="font-size: 12px;">${itemsSummary}</td>
+              <td><strong>KES ${o.totalAmount.toFixed(2)}</strong></td>
+              <td>
+                <span class="badge-status ${isPaid ? 'status-paid' : 'status-unpaid'}">${o.paymentStatus}</span><br>
+                <span style="font-size: 11px; color: var(--text-muted);">Due: KES ${o.amountOutstanding.toFixed(2)}</span>
+              </td>
+              <td><span class="badge-status status-pending">${o.orderStatus}</span></td>
+              <td>${o.expectedDeliveryDate || 'N/A'}</td>
+              <td>
+                <div style="display: flex; gap: 6px; flex-direction: column;">
+                  <button class="btn btn-primary btn-sm" onclick="confirmOrderDelivery('${o.orderNumber}')">✅ Confirm Delivery</button>
+                  <button class="btn btn-outline btn-sm" onclick="openAdjustModal('${o.orderNumber}')">✏️ Adjust (AP3)</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--danger); padding: 20px;">Error loading orders.</td></tr>';
+      }
+    }
+
+    async function confirmOrderDelivery(orderNumber) {
+      if (!confirm(`Confirm receipt and delivery of order ${orderNumber}?`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/orders/${orderNumber}/confirm-delivery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            confirmedBy: 'Shop Owner Mwangi',
+            payOnDeliverySettlementMethod: 'MPESA',
+            paymentReference: 'POD-SETTLED-' + Date.now()
+          })
+        });
+        const data = await res.json();
+        showAlert('pending-alert', 'success', `Order ${orderNumber} marked as DELIVERED and settled.`);
+        loadPendingOrders();
+      } catch (e) {
+        showAlert('pending-alert', 'error', 'Error confirming delivery.');
+      }
+    }
+
+    // Adjust Order (AP 3)
+    async function openAdjustModal(orderNumber) {
+      try {
+        const res = await fetch(`${API_BASE}/api/orders/${orderNumber}`);
+        activePendingOrderForAdjust = await res.json();
+        document.getElementById('adjust-order-ref').innerText = orderNumber;
+
+        let html = '';
+        activePendingOrderForAdjust.items.forEach((item, index) => {
+          html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
+              <div>
+                <strong>${item.productName}</strong><br>
+                <span style="font-size: 12px; color: var(--text-muted);">Unit Price: KES ${item.unitPrice.toFixed(2)}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="number" min="0" id="adjust-qty-${index}" value="${item.quantity}" class="form-control" style="width: 70px; padding: 6px;">
+                <button class="btn btn-danger btn-sm" onclick="document.getElementById('adjust-qty-${index}').value = 0;">Remove</button>
+              </div>
+            </div>
+          `;
+        });
+        document.getElementById('adjust-items-container').innerHTML = html;
+        document.getElementById('adjust-modal').classList.add('active');
+      } catch (e) {
+        showAlert('pending-alert', 'error', 'Error fetching order details for adjustment.');
+      }
+    }
+
+    function closeAdjustModal() {
+      document.getElementById('adjust-modal').classList.remove('active');
+    }
+
+    async function submitOrderAdjustment() {
+      if (!activePendingOrderForAdjust) return;
+      const newItems = [];
+      activePendingOrderForAdjust.items.forEach((item, index) => {
+        const q = parseInt(document.getElementById(`adjust-qty-${index}`).value) || 0;
+        if (q > 0) {
+          newItems.push({ productId: item.productId, quantity: q });
+        }
+      });
+
+      try {
+        const res = await fetch(`${API_BASE}/api/orders/${activePendingOrderForAdjust.orderNumber}/adjust`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: newItems })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.message || 'Error adjusting order');
+          return;
+        }
+        closeAdjustModal();
+        showAlert('pending-alert', 'success', `Order ${activePendingOrderForAdjust.orderNumber} successfully adjusted. New total: KES ${data.totalAmount.toFixed(2)}`);
+        loadPendingOrders();
+      } catch (e) {
+        alert('Failed to send adjustment');
+      }
+    }
+
+    // Cancel Order (AP 4)
+    function openCancelModal() {
+      document.getElementById('cancel-modal').classList.add('active');
+    }
+    function closeCancelModal() {
+      document.getElementById('cancel-modal').classList.remove('active');
+    }
+    async function confirmCancelOrder() {
+      const invoiceNumber = document.getElementById('cancel-invoice-input').value.trim();
+      const reason = document.getElementById('cancel-reason-input').value.trim();
+      if (!invoiceNumber) {
+        alert('Please enter an invoice number');
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/orders/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoiceNumber, reason })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.message || 'Error cancelling order');
+          return;
+        }
+        closeCancelModal();
+        showAlert('pending-alert', 'success', `Order (Invoice ${invoiceNumber}) has been cancelled. Supplier notified and stock reservations released.`);
+        loadPendingOrders();
+      } catch (e) {
+        alert('Failed to cancel order.');
+      }
+    }
+
+    // Manufacturer Demand Aggregation
+    async function loadManufacturerDemand() {
+      const tbody = document.getElementById('manufacturer-demand-tbody');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Aggregating demand...</td></tr>';
+      try {
+        const res = await fetch(`${API_BASE}/api/manufacturer/demand`);
+        const demand = await res.json();
+
+        const totalUnits = demand.reduce((sum, d) => sum + d.totalStockRequired, 0);
+        const distinctRegions = new Set(demand.map(d => d.region)).size;
+        const distinctProducts = new Set(demand.map(d => d.productId)).size;
+
+        document.getElementById('stat-total-units').innerText = `${totalUnits} Units`;
+        document.getElementById('stat-active-regions').innerText = `${distinctRegions} Regions`;
+        document.getElementById('stat-products-count').innerText = `${distinctProducts} Products`;
+
+        if (demand.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">No pending demand records.</td></tr>';
+          return;
+        }
+
+        let html = '';
+        demand.forEach(d => {
+          html += `
+            <tr>
+              <td><strong>${d.productName}</strong><br><span style="font-size: 12px; color: var(--text-muted);">${d.productId}</span></td>
+              <td><span class="badge-status status-pending">${d.region}</span></td>
+              <td><strong style="font-size: 16px; color: var(--primary);">${d.totalStockRequired} Units</strong></td>
+              <td>${d.requiredByDate || 'Immediate'}</td>
+              <td>${d.pendingOrdersCount} orders</td>
+              <td style="font-size: 12px;">${d.suppliersInvolved.join(', ')}</td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger); padding: 20px;">Error aggregating demand.</td></tr>';
+      }
+    }
+
+    // Refunds and Returns (UC-06 / KRA e-TIMS)
+    function prefillSampleSale() {
+      document.getElementById('lookup-etims').value = 'ETIMS-REC-88492041';
+      document.getElementById('lookup-invoice').value = 'INV-SUP-99102';
+      lookupSale();
+    }
+
+    async function lookupSale() {
+      const eTims = document.getElementById('lookup-etims').value.trim();
+      const inv = document.getElementById('lookup-invoice').value.trim();
+      if (!eTims || !inv) {
+        showAlert('refund-alert', 'error', 'Both e-TIMS receipt number and supplier invoice number are required.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/refunds/lookup-sale?eTimsReceiptNumber=${encodeURIComponent(eTims)}&supplierInvoiceNumber=${encodeURIComponent(inv)}`);
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert('refund-alert', 'error', `<strong>${data.error || 'Error'}:</strong> ${data.message}`);
+          document.getElementById('sale-details-container').style.display = 'none';
+          return;
+        }
+
+        currentLoadedSale = data;
+        document.getElementById('sale-ref-badge').innerText = data.saleReference;
+        document.getElementById('sale-header-info').innerHTML = `
+          <strong>Customer:</strong> ${data.customerName} &bull; 
+          <strong>Sale Date:</strong> ${new Date(data.saleDate).toLocaleDateString()} &bull; 
+          <strong>Original Total:</strong> KES ${data.totalAmount.toFixed(2)} &bull; 
+          <strong>Status:</strong> ${data.status}
+          ${data.linkedOrderNumber ? `<br><span style="color: #b45309; font-weight: 600;">⚠️ Linked Unfulfilled Order: ${data.linkedOrderNumber} (Will be reversed upon refund)</span>` : ''}
+        `;
+
+        let itemsHtml = '';
+        data.items.forEach((item, index) => {
+          itemsHtml += `
+            <tr>
+              <td><strong>${item.productName}</strong><br><span style="font-size: 12px; color: var(--text-muted);">${item.productId}</span></td>
+              <td>KES ${item.unitPrice.toFixed(2)}</td>
+              <td>${item.quantitySold}</td>
+              <td>${item.quantityRefunded}</td>
+              <td><strong style="color: var(--primary);">${item.remainingEligibleQuantity}</strong></td>
+              <td>
+                <input type="number" min="0" max="${item.remainingEligibleQuantity}" value="0" id="return-qty-${index}" class="form-control" onchange="computeRefundPreview()" style="width: 80px;">
+              </td>
+            </tr>
+          `;
+        });
+        document.getElementById('sale-items-tbody').innerHTML = itemsHtml;
+        document.getElementById('sale-details-container').style.display = 'block';
+        document.getElementById('refund-result-container').style.display = 'none';
+        computeRefundPreview();
+
+      } catch (e) {
+        showAlert('refund-alert', 'error', 'Error retrieving sale.');
+      }
+    }
+
+    function computeRefundPreview() {
+      if (!currentLoadedSale) return;
+      let net = 0;
+      let tax = 0;
+      currentLoadedSale.items.forEach((item, index) => {
+        const q = parseInt(document.getElementById(`return-qty-${index}`).value) || 0;
+        const lineNet = q * item.unitPrice;
+        const lineTax = lineNet * item.taxRate;
+        net += lineNet;
+        tax += lineTax;
+      });
+      const total = net + tax;
+      document.getElementById('calc-refund-net').innerText = `KES ${net.toFixed(2)}`;
+      document.getElementById('calc-refund-tax').innerText = `KES ${tax.toFixed(2)}`;
+      document.getElementById('calc-refund-total').innerText = `KES ${total.toFixed(2)}`;
+    }
+
+    async function submitRefund() {
+      if (!currentLoadedSale) return;
+      const returnItems = [];
+      currentLoadedSale.items.forEach((item, index) => {
+        const q = parseInt(document.getElementById(`return-qty-${index}`).value) || 0;
+        if (q > 0) {
+          returnItems.push({ productId: item.productId, quantity: q });
+        }
+      });
+
+      if (returnItems.length === 0) {
+        showAlert('refund-alert', 'error', 'Please select at least 1 item and quantity to return.');
+        return;
+      }
+
+      const payload = {
+        saleReference: currentLoadedSale.saleReference,
+        eTimsReceiptNumber: currentLoadedSale.eTimsReceiptNumber,
+        supplierInvoiceNumber: currentLoadedSale.supplierInvoiceNumber,
+        items: returnItems,
+        reason: document.getElementById('refund-reason-select').value,
+        requestedBy: document.getElementById('refund-requested-by').value
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/api/refunds`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert('refund-alert', 'error', `<strong>${data.error || 'Error'}:</strong> ${data.message}`);
+          return;
+        }
+
+        showAlert('refund-alert', 'success', `Refund <strong>${data.refundNumber}</strong> processed successfully! Credit note issued to KRA.`);
+        document.getElementById('cn-number-badge').innerText = data.creditNote.creditNoteNumber;
+
+        document.getElementById('refund-result-body').innerHTML = `
+          <div style="font-size: 14px; line-height: 1.8;">
+            <p><strong>Credit Note Number:</strong> ${data.creditNote.creditNoteNumber}</p>
+            <p><strong>Original e-TIMS Receipt:</strong> ${data.creditNote.originalReceiptNumber}</p>
+            <p><strong>Supplier Invoice Ref:</strong> ${data.creditNote.supplierInvoiceNumber}</p>
+            <p><strong>Total Refund Credited:</strong> KES ${data.refundTotalAmount.toFixed(2)} (Net: KES ${data.refundSubtotal.toFixed(2)} + VAT: KES ${data.refundTaxAmount.toFixed(2)})</p>
+            <p><strong>KRA e-TIMS Status:</strong> <span class="badge-status status-delivered">${data.creditNote.kraStatus}</span></p>
+            <p><strong>KRA Verification URL:</strong> <a href="${data.creditNote.qrCodeData}" target="_blank" style="color: var(--accent);">${data.creditNote.qrCodeData}</a></p>
+            <p><strong>Physical Stock Reversed:</strong> <span style="color: var(--primary); font-weight: 700;">✅ Restocked into Inventory</span></p>
+            ${data.reversedLinkedOrderNumber ? `<p><strong>Linked Unfulfilled Order:</strong> <span style="color: var(--danger); font-weight: 700;">✅ Order ${data.reversedLinkedOrderNumber} CANCELLED & Backorder released</span></p>` : ''}
+          </div>
+        `;
+        document.getElementById('refund-result-container').style.display = 'block';
+        lookupSale(); // reload sale state
+
+      } catch (e) {
+        showAlert('refund-alert', 'error', 'Error submitting refund request.');
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      initSuppliers();
+    });
+  </script>
+</body>
+</html>
