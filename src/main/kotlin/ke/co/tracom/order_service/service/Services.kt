@@ -217,8 +217,7 @@ class OrderService(
             PaymentMethod.MPESA -> {
                 val phone = request.mpesaPhoneNumber
                     ?: throw MissingMandatoryInformationException("Missing mandatory information: M-Pesa phone number required")
-//                paymentReference = paymentGatewayService.processMpesaPayment(phone, totalPayable, request.simulatePaymentFailure)
-                paymentReference = "sadfasdf"
+                paymentReference = paymentGatewayService.processMpesaPayment(phone, totalPayable, request.simulatePaymentFailure)
                 paymentStatus = PaymentStatus.PAID
                 amountPaid = totalPayable
                 amountOutstanding = BigDecimal.ZERO
@@ -227,6 +226,13 @@ class OrderService(
                 val card = request.cardNumber
                     ?: throw MissingMandatoryInformationException("Missing mandatory information: Card number required")
                 paymentReference = paymentGatewayService.processCardPayment(card, totalPayable, request.simulatePaymentFailure)
+                paymentStatus = PaymentStatus.PAID
+                amountPaid = totalPayable
+                amountOutstanding = BigDecimal.ZERO
+            }
+            PaymentMethod.CASH -> {
+                val todayStr = DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDate.now())
+                paymentReference = "CASH-$todayStr-${UUID.randomUUID().toString().take(6).uppercase()}"
                 paymentStatus = PaymentStatus.PAID
                 amountPaid = totalPayable
                 amountOutstanding = BigDecimal.ZERO

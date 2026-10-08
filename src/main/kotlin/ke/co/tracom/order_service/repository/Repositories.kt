@@ -2,14 +2,33 @@ package ke.co.tracom.order_service.repository
 
 import ke.co.tracom.order_service.domain.model.*
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
 interface ProductRepository : JpaRepository<Product, Long> {
-    fun findByProductId(productId: String): Product?
-    fun findBySupplierId(supplierId: String): List<Product>
-    fun findAllByOrderBySupplierIdAsc(): List<Product>
-    fun findByRegion(region: String): List<Product>
+    @Query("SELECT p FROM Product p WHERE p.productCode = :productId")
+    fun findByProductId(@Param("productId") productId: String): Product?
+
+    fun findByProductCode(productCode: String): Product?
+
+    fun findBySupplierId(supplierId: String): List<Product> =
+        findAll().filter { it.supplierId == supplierId }
+
+    fun findAllByOrderBySupplierIdAsc(): List<Product> =
+        findAll().sortedBy { it.supplierId }
+
+    fun findByRegion(region: String): List<Product> =
+        findAll().filter { it.region == region }
+}
+
+@Repository
+interface InventoryStockRepository : JpaRepository<InventoryStock, Long> {
+    fun findByProduct(product: Product): InventoryStock?
+
+    @Query("SELECT s FROM InventoryStock s WHERE s.product.id = :productId")
+    fun findByProductId(@Param("productId") productId: Long): InventoryStock?
 }
 
 @Repository

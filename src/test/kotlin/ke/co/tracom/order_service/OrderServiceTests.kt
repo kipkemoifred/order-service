@@ -271,4 +271,33 @@ class OrderServiceTests {
         assertTrue(riftValleyMilk!!.totalStockRequired >= 2)
         assertNotNull(riftValleyMilk.requiredByDate)
     }
+
+    @Test
+    fun `test place order with cash payment method`() {
+        val productBefore = productRepository.findByProductId("PRD-MILK-01")!!
+        val stockBefore = productBefore.stockLevel
+
+        val orderResponse = orderService.createOrder(
+            CreateOrderRequest(
+                shopOwnerId = "RET-001",
+                shopOwnerName = "Mama Jane Duka",
+                shopOwnerPhone = "0712345678",
+                supplierId = "SUP-BROOKSIDE",
+                region = "Nairobi",
+                items = listOf(OrderItemRequest("PRD-MILK-01", 1)),
+                paymentMethod = PaymentMethod.CASH
+            )
+        )
+
+        assertNotNull(orderResponse.orderNumber)
+        assertNotNull(orderResponse.invoiceNumber)
+        assertEquals(PaymentStatus.PAID, orderResponse.paymentStatus)
+        assertEquals(PaymentMethod.CASH, orderResponse.paymentMethod)
+        assertEquals(BigDecimal.ZERO, orderResponse.amountOutstanding)
+        assertNotNull(orderResponse.paymentReference)
+        assertTrue(orderResponse.paymentReference!!.startsWith("CASH-"))
+
+        val productAfter = productRepository.findByProductId("PRD-MILK-01")!!
+        assertEquals(stockBefore - 1, productAfter.stockLevel)
+    }
 }
